@@ -6,21 +6,35 @@ var voices = Speech.getVoices();
  * @method speak
  */
 const speak = (text) => {
-  var msg = new SpeechSynthesisUtterance();
-  msg.voice = voices[2];
-  msg.voiceURI = 'native';
-  msg.volume = 1;
-  msg.text = text;
-  msg.lang = 'en-US';
+  var speechSynthesis = new SpeechSynthesisUtterance();
+  speechSynthesis.voice = voices[2];
+  speechSynthesis.voiceURI = 'native';
+  speechSynthesis.volume = 1;
+  speechSynthesis.text = text;
+  speechSynthesis.lang = 'en-US';
 
-  Speech.speak(msg);
+  speechSynthesis.onerror = speechSynthesis.onpause = speechSynthesis.onresume =
+  speechSynthesis.onboundary = speechSynthesis.onmark = (e) => {
+    debugger;
+  };
+
+  Speech.speak(speechSynthesis);
 };
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch(request.message) {
     case 'selected': {
+      if (Speech.pending || Speech.paused) {
+        Speech.cancel();
+      }
+
       const selectedText = window.getSelection().toString();
-      speak(selectedText);
+      const blockSize = 200;
+      for (let i = 0; i < selectedText.length; i += blockSize) {
+        let currentBlock = selectedText.substring(i, i+blockSize);
+        speak(currentBlock);
+      }
+
       break;
     }
     case 'auto': {
