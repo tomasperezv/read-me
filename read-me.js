@@ -15,12 +15,24 @@ const speak = (text) => {
 
   speechSynthesis.onerror = speechSynthesis.onpause = speechSynthesis.onresume =
   speechSynthesis.onboundary = speechSynthesis.onmark = (e) => {
-    debugger;
+    console.log(e);
   };
 
   Speech.speak(speechSynthesis);
 };
 
+/**
+ * @method speakBlock
+ */
+const speakBlock = (text) => {
+  const blockSize = 200;
+  for (let i = 0; i < text.length; i += blockSize) {
+    let currentBlock = text.substring(i, i+blockSize);
+    speak(currentBlock);
+  }
+};
+
+// Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch(request.message) {
     case 'selected': {
@@ -29,16 +41,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
 
       const selectedText = window.getSelection().toString();
-      const blockSize = 200;
-      for (let i = 0; i < selectedText.length; i += blockSize) {
-        let currentBlock = selectedText.substring(i, i+blockSize);
-        speak(currentBlock);
-      }
-
+      speakBlock(selectedText);
       break;
     }
     case 'auto': {
-      speak('auto');
+      // Identify the selected HTMLElement, go to its parent and get the text content
+      const parentElement = window.getSelection().anchorNode.parentNode;
+      speakBlock(parentElement.textContent);
       break;
     }
   }
